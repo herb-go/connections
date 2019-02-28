@@ -3,7 +3,7 @@ package contexts
 import (
 	"sync"
 
-	"github.com/jarlyyn/herb-go-experimental/connections"
+	"connections"
 )
 
 type ConnContext struct {

@@ -5,7 +5,7 @@ import (
 
 	"container/list"
 
-	"github.com/jarlyyn/herb-go-experimental/connections"
+	"connections"
 )
 
 type BroadcastError struct {

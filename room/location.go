@@ -4,7 +4,7 @@ import (
 	"container/list"
 	"sync"
 
-	"github.com/jarlyyn/herb-go-experimental/connections"
+	"connections"
 )
 
 type Location struct {
