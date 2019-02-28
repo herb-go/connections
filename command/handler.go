@@ -1,7 +1,7 @@
 package command
 
 import (
-	"connections"
+	"github.com/herb-go/connections"
 )
 
 type Handler func(conn connections.ConnectionOutput, cmd Command) error

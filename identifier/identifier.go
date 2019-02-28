@@ -1,6 +1,6 @@
 package identifier
 
-import "connections"
+import "github.com/herb-go/connections"
 
 type Identifier interface {
 	Login(id string, conn connections.ConnectionOutput) error

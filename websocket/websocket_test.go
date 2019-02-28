@@ -3,7 +3,7 @@ package websocket
 import (
 	"testing"
 
-	"connections"
+	"github.com/herb-go/connections"
 )
 
 func TestInterface(t *testing.T) {

@@ -3,7 +3,7 @@ package identifier
 import (
 	"sync"
 
-	"connections"
+	"github.com/herb-go/connections"
 )
 
 var GenerateDefaultMapOnLogout = func(m *Map) func(id string, conn connections.ConnectionOutput) error {
