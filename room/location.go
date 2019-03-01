@@ -10,11 +10,11 @@ import (
 type Location struct {
 	list  *list.List
 	lock  sync.Mutex
-	conn  connections.ConnectionOutput
+	conn  connections.OutputConnection
 	rooms Joinable
 }
 
-func NewLocation(conn connections.ConnectionOutput, rooms Joinable) *Location {
+func NewLocation(conn connections.OutputConnection, rooms Joinable) *Location {
 	return &Location{
 		list:  list.New(),
 		conn:  conn,

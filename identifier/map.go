@@ -6,8 +6,8 @@ import (
 	"github.com/herb-go/connections"
 )
 
-var GenerateDefaultMapOnLogout = func(m *Map) func(id string, conn connections.ConnectionOutput) error {
-	return func(id string, conn connections.ConnectionOutput) error {
+var GenerateDefaultMapOnLogout = func(m *Map) func(id string, conn connections.OutputConnection) error {
+	return func(id string, conn connections.OutputConnection) error {
 		conn.Close()
 		return nil
 	}
@@ -16,10 +16,10 @@ var GenerateDefaultMapOnLogout = func(m *Map) func(id string, conn connections.C
 type Map struct {
 	Identities sync.Map
 	lock       sync.Mutex
-	onLogout   func(id string, conn connections.ConnectionOutput) error
+	onLogout   func(id string, conn connections.OutputConnection) error
 }
 
-func (m *Map) conn(id string) (connections.ConnectionOutput, bool) {
+func (m *Map) conn(id string) (connections.OutputConnection, bool) {
 	data, ok := m.Identities.Load(id)
 	if ok == false {
 		return nil, false
@@ -28,7 +28,7 @@ func (m *Map) conn(id string) (connections.ConnectionOutput, bool) {
 	return conn, ok
 }
 
-func (m *Map) Login(id string, c connections.ConnectionOutput) error {
+func (m *Map) Login(id string, c connections.OutputConnection) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	conn, ok := m.conn(id)
@@ -42,7 +42,7 @@ func (m *Map) Login(id string, c connections.ConnectionOutput) error {
 	m.Identities.Store(id, c)
 	return nil
 }
-func (m *Map) Logout(id string, c connections.ConnectionOutput) error {
+func (m *Map) Logout(id string, c connections.OutputConnection) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	conn, ok := m.conn(id)
@@ -58,7 +58,7 @@ func (m *Map) Logout(id string, c connections.ConnectionOutput) error {
 	m.Identities.Delete(id)
 	return nil
 }
-func (m *Map) Verify(id string, conn connections.ConnectionOutput) (bool, error) {
+func (m *Map) Verify(id string, conn connections.OutputConnection) (bool, error) {
 	conn, ok := m.conn(id)
 	if ok == false {
 		return false, nil
@@ -72,10 +72,10 @@ func (m *Map) SendByID(id string, msg []byte) error {
 	}
 	return conn.Send(msg)
 }
-func (m *Map) OnLogout() func(id string, conn connections.ConnectionOutput) error {
+func (m *Map) OnLogout() func(id string, conn connections.OutputConnection) error {
 	return m.onLogout
 }
-func (m *Map) SetOnLogout(f func(id string, conn connections.ConnectionOutput) error) {
+func (m *Map) SetOnLogout(f func(id string, conn connections.OutputConnection) error) {
 	m.onLogout = f
 }
 

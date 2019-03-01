@@ -1,44 +1,59 @@
 package connections
 
-type ConnectionsConsumer interface {
+//Consumer Consumer interface which can consume connections message.
+type Consumer interface {
+	//OnMessage called when connection message received.
 	OnMessage(*Message)
+	//OnError called when onconnection error raised.
 	OnError(*Error)
-	OnClose(ConnectionOutput)
-	OnOpen(ConnectionOutput)
+	//OnClose called when connection closed.
+	OnClose(OutputConnection)
+	//OnOpen called when connection open.
+	OnOpen(OutputConnection)
 }
 
+//EmptyConsumer empty consumer  implemented all  required method.
+//Your consumer should extends to keep compatibility in future.
 type EmptyConsumer struct {
 }
 
+//OnMessage called when connection message received.
 func (e EmptyConsumer) OnMessage(*Message) {
 
 }
+
+//OnError called when onconnection error raised.
 func (e EmptyConsumer) OnError(*Error) {
 
 }
-func (e EmptyConsumer) OnClose(ConnectionOutput) {
+
+//OnClose called when connection closed.
+func (e EmptyConsumer) OnClose(OutputConnection) {
 
 }
-func (e EmptyConsumer) OnOpen(ConnectionOutput) {
+
+//OnOpen called when connection open.
+func (e EmptyConsumer) OnOpen(OutputConnection) {
 
 }
 
-func Consume(i ConnectionsInput, c ConnectionsConsumer) {
+// Consume consume input service with given consumer.
+func Consume(i InputService, c Consumer) {
 	for {
 		select {
-		case m := <-i.Messages():
+		case m := <-i.MessagesChan():
 			go func() {
 				c.OnMessage(m)
 			}()
-		case e := <-i.Errors():
+		case e := <-i.ErrorsChan():
 			go func() {
 				c.OnError(e)
 			}()
-		case conn := <-i.OnCloseEvents():
+		case conn := <-i.OnCloseEventsChan():
 			go func() {
 				c.OnClose(conn)
 			}()
-		case conn := <-i.OnOpenEvents():
+		case conn := <-i.OnOpenEventsChan():
 			go func() {
 				c.OnOpen(conn)
 			}()

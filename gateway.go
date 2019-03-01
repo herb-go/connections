@@ -7,6 +7,8 @@ import (
 	"github.com/satori/go.uuid"
 )
 
+//DefaultIDGenerator default  generator.
+//Return uuid string and any error if raised.
 var DefaultIDGenerator = func() (string, error) {
 	unid, err := uuid.NewV1()
 	if err != nil {
@@ -15,26 +17,37 @@ var DefaultIDGenerator = func() (string, error) {
 	return unid.String(), nil
 }
 
+//NewGateway create new gateway
 func NewGateway() *Gateway {
 	return &Gateway{
 		IDGenerator:   DefaultIDGenerator,
 		messages:      make(chan *Message),
 		errors:        make(chan *Error),
-		onCloseEvents: make(chan ConnectionOutput),
-		onOpenEvents:  make(chan ConnectionOutput),
+		onCloseEvents: make(chan OutputConnection),
+		onOpenEvents:  make(chan OutputConnection),
 	}
 }
 
+// Gateway connection gateway struct
 type Gateway struct {
-	ID            string
-	IDGenerator   func() (string, error)
-	Connections   sync.Map
-	messages      chan *Message
-	errors        chan *Error
-	onCloseEvents chan ConnectionOutput
-	onOpenEvents  chan ConnectionOutput
+	//ID gateway id
+	ID string
+	//IDGenerator connection id generator
+	IDGenerator func() (string, error)
+	//Connections connections managerd by gateway.
+	Connections sync.Map
+	//messages connection message chan.
+	messages chan *Message
+	//errors connection error chan
+	errors chan *Error
+	//onCloseEvents connection closed event chan
+	onCloseEvents chan OutputConnection
+	//onOpenEvents connection open event chan
+	onOpenEvents chan OutputConnection
 }
 
+//Register register raw connection to gateway.
+//Return connection and any error if raised.
 func (m *Gateway) Register(conn RawConnection) (*Conn, error) {
 	id, err := m.IDGenerator()
 	if err != nil {
@@ -58,12 +71,12 @@ func (m *Gateway) Register(conn RawConnection) (*Conn, error) {
 	Listener:
 		for {
 			select {
-			case message := <-conn.Messages():
+			case message := <-conn.MessagesChan():
 				m.messages <- &Message{
 					Message: message,
 					Conn:    r,
 				}
-			case err := <-conn.Errors():
+			case err := <-conn.ErrorsChan():
 				m.errors <- &Error{
 					Error: err,
 					Conn:  r,
@@ -77,6 +90,9 @@ func (m *Gateway) Register(conn RawConnection) (*Conn, error) {
 	m.Connections.Store(id, r)
 	return r, nil
 }
+
+//Conn get connection by id.
+//Return nil if connection not registered.
 func (m *Gateway) Conn(id string) *Conn {
 	val, ok := m.Connections.Load(id)
 	if ok == false {
@@ -85,6 +101,9 @@ func (m *Gateway) Conn(id string) *Conn {
 	r := val.(*Conn)
 	return r
 }
+
+//Send send message to connection by given id.
+//Return and error if raised.
 func (m *Gateway) Send(id string, msg []byte) error {
 	c := m.Conn(id)
 	if c == nil {
@@ -93,6 +112,8 @@ func (m *Gateway) Send(id string, msg []byte) error {
 	return c.Send(msg)
 }
 
+//Close connection by given id.
+//Return any error if raised.
 func (m *Gateway) Close(id string) error {
 	c := m.Conn(id)
 	if c == nil {
@@ -101,16 +122,22 @@ func (m *Gateway) Close(id string) error {
 	return c.Close()
 }
 
-func (m *Gateway) Messages() chan *Message {
+//MessagesChan return connection message  chan.
+func (m *Gateway) MessagesChan() chan *Message {
 	return m.messages
 }
-func (m *Gateway) Errors() chan *Error {
+
+//ErrorsChan return connection error chan.
+func (m *Gateway) ErrorsChan() chan *Error {
 	return m.errors
 }
 
-func (m *Gateway) OnCloseEvents() chan ConnectionOutput {
+//OnCloseEventsChan return closed event chan.
+func (m *Gateway) OnCloseEventsChan() chan OutputConnection {
 	return m.onCloseEvents
 }
-func (m *Gateway) OnOpenEvents() chan ConnectionOutput {
+
+//OnOpenEventsChan return open event chan.
+func (m *Gateway) OnOpenEventsChan() chan OutputConnection {
 	return m.onOpenEvents
 }

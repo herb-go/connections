@@ -7,7 +7,7 @@ import (
 )
 
 type ConnContext struct {
-	connections.ConnectionOutput
+	connections.OutputConnection
 	Data sync.Map
 	Lock sync.RWMutex
 }
@@ -21,15 +21,15 @@ type Contexts struct {
 	conns sync.Map
 }
 
-func (c *Contexts) OnClose(conn connections.ConnectionOutput) {
+func (c *Contexts) OnClose(conn connections.OutputConnection) {
 	id := conn.ID()
 	c.conns.Delete(id)
 
 }
-func (c *Contexts) OnOpen(conn connections.ConnectionOutput) {
+func (c *Contexts) OnOpen(conn connections.OutputConnection) {
 	id := conn.ID()
 	context := NewConnContext()
-	context.ConnectionOutput = conn
+	context.OutputConnection = conn
 	c.conns.Store(id, context)
 }
 

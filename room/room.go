@@ -10,7 +10,7 @@ import (
 
 type BroadcastError struct {
 	Error error
-	Conn  connections.ConnectionOutput
+	Conn  connections.OutputConnection
 	Room  *Room
 }
 type Room struct {
@@ -19,23 +19,23 @@ type Room struct {
 	Conns *list.List
 }
 
-func (r *Room) Members() []connections.ConnectionOutput {
+func (r *Room) Members() []connections.OutputConnection {
 	r.Lock.Lock()
 	defer r.Lock.Unlock()
-	conns := make([]connections.ConnectionOutput, r.Conns.Len())
+	conns := make([]connections.OutputConnection, r.Conns.Len())
 	e := r.Conns.Front()
 	i := 0
 	for {
 		if e == nil {
 			break
 		}
-		conns[i] = e.Value.(connections.ConnectionOutput)
+		conns[i] = e.Value.(connections.OutputConnection)
 		e = e.Next()
 		i++
 	}
 	return conns
 }
-func (r *Room) Join(conn connections.ConnectionOutput) bool {
+func (r *Room) Join(conn connections.OutputConnection) bool {
 	r.Lock.Lock()
 	defer r.Lock.Unlock()
 	newid := conn.ID()
@@ -44,7 +44,7 @@ func (r *Room) Join(conn connections.ConnectionOutput) bool {
 		if e == nil {
 			break
 		}
-		c := e.Value.(connections.ConnectionOutput)
+		c := e.Value.(connections.OutputConnection)
 		if c != nil && c.ID() == newid {
 			return false
 		}
@@ -54,7 +54,7 @@ func (r *Room) Join(conn connections.ConnectionOutput) bool {
 	return true
 }
 
-func (r *Room) Leave(conn connections.ConnectionOutput) bool {
+func (r *Room) Leave(conn connections.OutputConnection) bool {
 	r.Lock.Lock()
 	defer r.Lock.Unlock()
 	newid := conn.ID()
@@ -63,7 +63,7 @@ func (r *Room) Leave(conn connections.ConnectionOutput) bool {
 		if e == nil {
 			break
 		}
-		c := e.Value.(connections.ConnectionOutput)
+		c := e.Value.(connections.OutputConnection)
 		if c != nil && c.ID() == newid {
 			r.Conns.Remove(e)
 			return true
@@ -80,7 +80,7 @@ func (r *Room) Broadcast(msg []byte) []*BroadcastError {
 		if e == nil {
 			break
 		}
-		c := e.Value.(connections.ConnectionOutput)
+		c := e.Value.(connections.OutputConnection)
 		err := c.Send(msg)
 		if err != nil {
 			e := &BroadcastError{
@@ -106,14 +106,14 @@ type Rooms struct {
 	Errors chan *BroadcastError
 }
 
-func (r *Rooms) Members(roomid string) []connections.ConnectionOutput {
+func (r *Rooms) Members(roomid string) []connections.OutputConnection {
 	v, ok := r.Rooms.Load(roomid)
 	if ok == false || v == nil {
-		return []connections.ConnectionOutput{}
+		return []connections.OutputConnection{}
 	}
 	return v.(*Room).Members()
 }
-func (r *Rooms) Join(roomid string, conn connections.ConnectionOutput) {
+func (r *Rooms) Join(roomid string, conn connections.OutputConnection) {
 	var room *Room
 	v, ok := r.Rooms.Load(roomid)
 	if ok == false {
@@ -128,7 +128,7 @@ func (r *Rooms) Join(roomid string, conn connections.ConnectionOutput) {
 	return
 }
 
-func (r *Rooms) Leave(roomid string, conn connections.ConnectionOutput) {
+func (r *Rooms) Leave(roomid string, conn connections.OutputConnection) {
 	r.Lock.Lock()
 	defer r.Lock.Unlock()
 	var room *Room
@@ -167,6 +167,6 @@ func NewRooms() *Rooms {
 }
 
 type Joinable interface {
-	Join(roomid string, conn connections.ConnectionOutput)
-	Leave(roomid string, conn connections.ConnectionOutput)
+	Join(roomid string, conn connections.OutputConnection)
+	Leave(roomid string, conn connections.OutputConnection)
 }

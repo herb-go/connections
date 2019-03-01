@@ -10,11 +10,16 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+//MsgTypeText text  message type
 const MsgTypeText = websocket.TextMessage
+
+//MsgTypeBinary binary  message type
 const MsgTypeBinary = websocket.BinaryMessage
 
+// ErrMsgTypeNotMatch error message type not match
 var ErrMsgTypeNotMatch = errors.New("websocket message type not match")
 
+// Conn websocket connection
 type Conn struct {
 	*websocket.Conn
 	closed      bool
@@ -26,19 +31,30 @@ type Conn struct {
 	c           chan int
 }
 
+//Send send message to connction.
+//return any error if raised.
 func (c *Conn) Send(msg []byte) error {
 	c.output <- msg
 	return nil
 }
+
+//C connection close signal chan.
 func (c *Conn) C() chan int {
 	return c.c
 }
-func (c *Conn) Messages() chan []byte {
+
+//MessagesChan connection message chan
+func (c *Conn) MessagesChan() chan []byte {
 	return c.messages
 }
-func (c *Conn) Errors() chan error {
+
+//ErrorsChan connection error chan.
+func (c *Conn) ErrorsChan() chan error {
 	return c.errors
 }
+
+//Close close connection.
+//Return any error if raised.
 func (c *Conn) Close() error {
 	defer c.closelocker.Unlock()
 	c.closelocker.Lock()
@@ -60,9 +76,13 @@ func (c *Conn) send(m []byte) error {
 	return c.Conn.WriteMessage(c.messageType, m)
 }
 
+//RemoteAddr return connection rempte address.
 func (c *Conn) RemoteAddr() net.Addr {
 	return c.Conn.RemoteAddr()
 }
+
+//New create new websocket connection.
+//Return connection created.
 func New() *Conn {
 	return &Conn{
 		closed:   true,
@@ -73,10 +93,13 @@ func New() *Conn {
 	}
 }
 
-var upgrader = websocket.Upgrader{} // use default options
+// Upgrader websocket connection upgrader config
+var Upgrader = websocket.Upgrader{}
 
+//Upgrade Upgrade http requret with given message type to websocket concection.
+//Return websocker connection and any error if raised.
 func Upgrade(w http.ResponseWriter, r *http.Request, msgtype int) (*Conn, error) {
-	wc, err := upgrader.Upgrade(w, r, nil)
+	wc, err := Upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return nil, err
 	}

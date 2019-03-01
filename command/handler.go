@@ -4,11 +4,11 @@ import (
 	"github.com/herb-go/connections"
 )
 
-type Handler func(conn connections.ConnectionOutput, cmd Command) error
+type Handler func(conn connections.OutputConnection, cmd Command) error
 
 type Handlers map[string]Handler
 
-func (h Handlers) WrapError(conn connections.ConnectionOutput, err error) *connections.Error {
+func (h Handlers) WrapError(conn connections.OutputConnection, err error) *connections.Error {
 	if err == nil {
 		return nil
 	}
