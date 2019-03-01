@@ -24,4 +24,9 @@ func TestInterface(t *testing.T) {
 	if consumer == nil {
 		t.Error(consumer)
 	}
+	var rc RawConnection
+	rc = NewDummyConnection()
+	if rc == nil {
+		t.Error(rc)
+	}
 }
