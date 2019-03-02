@@ -2,7 +2,6 @@ package connections
 
 import (
 	"net"
-	"time"
 )
 
 //NewDummyConnection create new dummy connection.
@@ -42,14 +41,13 @@ func (c *DummyConnection) Send(msg []byte) error {
 	return nil
 }
 
-//ReadOutput read  connection output with timeout.
-func (c *DummyConnection) ReadOutput() ([]byte, bool) {
-	select {
-	case m, closed := <-c.Output:
-		return m, closed
-	case <-time.NewTimer(time.Millisecond).C:
-		return nil, false
-	}
+//ClientSend Send send message to connction from client.
+//return any error if raised.
+func (c *DummyConnection) ClientSend(msg []byte) error {
+	go func() {
+		c.messages <- msg
+	}()
+	return nil
 }
 
 //MessagesChan connection message chan
@@ -70,14 +68,4 @@ func (c *DummyConnection) RemoteAddr() net.Addr {
 //C connection close signal chan.
 func (c *DummyConnection) C() chan int {
 	return c.c
-}
-
-//ReadC read connection close chan
-func (c *DummyConnection) ReadC() (int, bool) {
-	select {
-	case v, closed := <-c.C():
-		return v, closed
-	case <-time.NewTimer(time.Millisecond).C:
-		return -1, false
-	}
 }
