@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-func readByteChan(c chan []byte) ([]byte, bool) {
+func readBytesChan(c chan []byte) ([]byte, bool) {
 	select {
 	case bs, more := <-c:
 		return bs, more
@@ -14,6 +14,15 @@ func readByteChan(c chan []byte) ([]byte, bool) {
 }
 
 func readMessageChan(c chan *Message) (*Message, bool) {
+	select {
+	case v, more := <-c:
+		return v, more
+	case <-time.After(time.Millisecond):
+		return nil, false
+	}
+}
+
+func readErrorChan(c chan *Error) (*Error, bool) {
 	select {
 	case v, more := <-c:
 		return v, more

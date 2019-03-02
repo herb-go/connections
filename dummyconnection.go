@@ -66,3 +66,8 @@ func (c *DummyConnection) RemoteAddr() net.Addr {
 func (c *DummyConnection) C() chan int {
 	return c.c
 }
+
+//RaiseError raise en error to connection
+func (c *DummyConnection) RaiseError(err error) {
+	c.errors <- err
+}
