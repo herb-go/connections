@@ -21,3 +21,12 @@ func readMessageChan(c chan *Message) (*Message, bool) {
 		return nil, false
 	}
 }
+
+func readConnChan(c chan OutputConnection) (OutputConnection, bool) {
+	select {
+	case v, more := <-c:
+		return v, more
+	case <-time.NewTimer(time.Millisecond).C:
+		return nil, false
+	}
+}

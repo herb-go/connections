@@ -28,9 +28,6 @@ type DummyConnection struct {
 //Return any error if raised.
 func (c *DummyConnection) Close() error {
 	close(c.c)
-	close(c.errors)
-	close(c.messages)
-	close(c.Output)
 	return nil
 }
 

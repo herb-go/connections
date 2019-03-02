@@ -11,15 +11,22 @@ func TestGateway(t *testing.T) {
 	var conn *Conn
 	var err error
 	g := NewGateway()
-	go func() {
-		Consume(g, &EmptyConsumer{})
-	}()
+	// go func() {
+	// 	Consume(g, &EmptyConsumer{})
+	// }()
 	time.Sleep(time.Microsecond)
 	dummyconn := NewDummyConnection()
 	go func() {
 		conn, err = g.Register(dummyconn)
 		if err != nil {
 			t.Fatal(err)
+		}
+		c, more := readConnChan(g.OnOpenEventsChan())
+		if more != true {
+			t.Fatal(more)
+		}
+		if c != conn {
+			t.Fatal(conn)
 		}
 	}()
 	dummyconn.ClientSend(testmsg)
@@ -40,4 +47,13 @@ func TestGateway(t *testing.T) {
 	if conn2 != conn {
 		t.Fatal(conn2)
 	}
+	g.Close(conn.ID())
+	c, more := readConnChan(g.OnCloseEventsChan())
+	if more != true {
+		t.Fatal(more)
+	}
+	if c != conn {
+		t.Fatal(conn)
+	}
+
 }

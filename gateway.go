@@ -63,7 +63,9 @@ func (m *Gateway) Register(conn RawConnection) (*Conn, error) {
 			Timestamp: time.Now().Unix(),
 		},
 	}
-	m.onOpenEvents <- r
+	go func() {
+		m.onOpenEvents <- r
+	}()
 	go func() {
 		defer func() {
 			m.Connections.Delete(r.Info.ID)
@@ -85,7 +87,9 @@ func (m *Gateway) Register(conn RawConnection) (*Conn, error) {
 				break Listener
 			}
 		}
-		m.onCloseEvents <- r
+		go func() {
+			m.onCloseEvents <- r
+		}()
 	}()
 	m.Connections.Store(id, r)
 	return r, nil
