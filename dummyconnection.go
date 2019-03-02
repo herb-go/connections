@@ -2,6 +2,7 @@ package connections
 
 import (
 	"net"
+	"sync"
 )
 
 //NewDummyConnection create new dummy connection.
@@ -22,12 +23,17 @@ type DummyConnection struct {
 	Output   chan []byte
 	errors   chan error
 	c        chan int
+	Closed   bool
+	Lock     sync.Mutex
 }
 
 //Close close connection.
 //Return any error if raised.
 func (c *DummyConnection) Close() error {
+	c.Lock.Lock()
+	defer c.Lock.Unlock()
 	close(c.c)
+	c.Closed = true
 	return nil
 }
 

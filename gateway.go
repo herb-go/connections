@@ -63,6 +63,12 @@ func (m *Gateway) Register(conn RawConnection) (*Conn, error) {
 			Timestamp: time.Now().Unix(),
 		},
 	}
+
+	_, loaded := m.Connections.LoadOrStore(id, r)
+	if loaded {
+		r.Close()
+		return nil, ErrConnIDDuplicated
+	}
 	go func() {
 		m.onOpenEvents <- r
 	}()
@@ -91,7 +97,6 @@ func (m *Gateway) Register(conn RawConnection) (*Conn, error) {
 			m.onCloseEvents <- r
 		}()
 	}()
-	m.Connections.Store(id, r)
 	return r, nil
 }
 
