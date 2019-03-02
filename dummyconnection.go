@@ -1,14 +1,17 @@
 package connections
 
-import "net"
+import (
+	"net"
+	"time"
+)
 
 //NewDummyConnection create new dummy connection.
 //Return dummy connection created.
 func NewDummyConnection() *DummyConnection {
 	return &DummyConnection{
-		messages: make(chan []byte),
-		Output:   make(chan []byte),
-		errors:   make(chan error),
+		messages: make(chan []byte, 10),
+		Output:   make(chan []byte, 10),
+		errors:   make(chan error, 10),
 		c:        make(chan int),
 	}
 }
@@ -39,6 +42,16 @@ func (c *DummyConnection) Send(msg []byte) error {
 	return nil
 }
 
+//ReadOutput read  connection output with timeout.
+func (c *DummyConnection) ReadOutput() ([]byte, bool) {
+	select {
+	case m, closed := <-c.Output:
+		return m, closed
+	case <-time.NewTimer(time.Millisecond).C:
+		return nil, false
+	}
+}
+
 //MessagesChan connection message chan
 func (c *DummyConnection) MessagesChan() chan []byte {
 	return c.messages
@@ -57,4 +70,14 @@ func (c *DummyConnection) RemoteAddr() net.Addr {
 //C connection close signal chan.
 func (c *DummyConnection) C() chan int {
 	return c.c
+}
+
+//ReadC read connection close chan
+func (c *DummyConnection) ReadC() (int, bool) {
+	select {
+	case v, closed := <-c.C():
+		return v, closed
+	case <-time.NewTimer(time.Millisecond).C:
+		return -1, false
+	}
 }
