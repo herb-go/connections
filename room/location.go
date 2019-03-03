@@ -69,7 +69,7 @@ func (l *Location) Rooms() []string {
 		if e == nil {
 			break
 		}
-		rooms[i] = e.Value.(string)
+		rooms = append(rooms, e.Value.(string))
 		e = e.Next()
 		i++
 	}
