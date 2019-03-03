@@ -7,6 +7,7 @@ import (
 	"github.com/herb-go/connections"
 )
 
+// Location room data of user.
 type Location struct {
 	list  *list.List
 	lock  sync.Mutex
@@ -14,6 +15,7 @@ type Location struct {
 	rooms Joinable
 }
 
+//NewLocation create new loction with given connection and rooms.
 func NewLocation(conn connections.OutputConnection, rooms Joinable) *Location {
 	return &Location{
 		list:  list.New(),
@@ -22,12 +24,15 @@ func NewLocation(conn connections.OutputConnection, rooms Joinable) *Location {
 	}
 }
 
+//Join join user to give room
 func (l *Location) Join(roomid string) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	l.rooms.Join(roomid, l.conn)
 	l.list.PushBack(roomid)
 }
+
+//Leave leave from given room.
 func (l *Location) Leave(roomid string) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
@@ -44,6 +49,8 @@ func (l *Location) Leave(roomid string) {
 		e = e.Next()
 	}
 }
+
+//LeaveAll Leave from all rooms.
 func (l *Location) LeaveAll() {
 	l.lock.Lock()
 	defer l.lock.Unlock()
@@ -59,6 +66,7 @@ func (l *Location) LeaveAll() {
 	}
 }
 
+// Rooms list all rooms user joined.
 func (l *Location) Rooms() []string {
 	l.lock.Lock()
 	defer l.lock.Unlock()

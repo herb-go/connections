@@ -8,17 +8,24 @@ import (
 	"github.com/herb-go/connections"
 )
 
+// BroadcastError room broadcast error
 type BroadcastError struct {
+	//Error raw error.
 	Error error
-	Conn  connections.OutputConnection
-	Room  *Room
+	//Conn connections in which error raised.
+	Conn connections.OutputConnection
+	//Room room in which error raised.
+	Room *Room
 }
+
+//Room connection room in which all connections will receive broadcast.
 type Room struct {
 	ID    string
 	Lock  sync.Mutex
 	Conns *list.List
 }
 
+//Members list room connections.
 func (r *Room) Members() []connections.OutputConnection {
 	r.Lock.Lock()
 	defer r.Lock.Unlock()
@@ -35,6 +42,8 @@ func (r *Room) Members() []connections.OutputConnection {
 	}
 	return conns
 }
+
+//Join join connection to room.
 func (r *Room) Join(conn connections.OutputConnection) bool {
 	r.Lock.Lock()
 	defer r.Lock.Unlock()
@@ -54,6 +63,7 @@ func (r *Room) Join(conn connections.OutputConnection) bool {
 	return true
 }
 
+//Leave leave connection from room.
 func (r *Room) Leave(conn connections.OutputConnection) bool {
 	r.Lock.Lock()
 	defer r.Lock.Unlock()
@@ -73,6 +83,8 @@ func (r *Room) Leave(conn connections.OutputConnection) bool {
 	return false
 }
 
+//Broadcast broadcast message to all connection in room.
+//Return BroadcastError if any error raised.
 func (r *Room) Broadcast(msg []byte) []*BroadcastError {
 	errs := []*BroadcastError{}
 	e := r.Conns.Front()
@@ -94,18 +106,22 @@ func (r *Room) Broadcast(msg []byte) []*BroadcastError {
 	}
 	return errs
 }
+
+// NewRoom create new room.
 func NewRoom() *Room {
 	return &Room{
 		Conns: list.New(),
 	}
 }
 
+// Rooms rooms manager
 type Rooms struct {
 	Rooms  sync.Map
 	Lock   sync.Mutex
 	Errors chan *BroadcastError
 }
 
+// Members list connections in room by given room id.
 func (r *Rooms) Members(roomid string) []connections.OutputConnection {
 	v, ok := r.Rooms.Load(roomid)
 	if ok == false || v == nil {
@@ -113,6 +129,9 @@ func (r *Rooms) Members(roomid string) []connections.OutputConnection {
 	}
 	return v.(*Room).Members()
 }
+
+//Join join connection to room by given room id.
+//Auto create room if not exists.
 func (r *Rooms) Join(roomid string, conn connections.OutputConnection) {
 	var room *Room
 	v, ok := r.Rooms.Load(roomid)
@@ -128,6 +147,8 @@ func (r *Rooms) Join(roomid string, conn connections.OutputConnection) {
 	return
 }
 
+//Leave leave connection form room by give room id.
+//Auto remove room if  root empty.
 func (r *Rooms) Leave(roomid string, conn connections.OutputConnection) {
 	r.Lock.Lock()
 	defer r.Lock.Unlock()
@@ -147,6 +168,8 @@ func (r *Rooms) Leave(roomid string, conn connections.OutputConnection) {
 	return
 }
 
+//Broadcast brodcat message to give room.
+//BroadcastError will be sent to Error chan if any error raised.
 func (r *Rooms) Broadcast(roomid string, msg []byte) {
 	var room *Room
 	v, ok := r.Rooms.Load(roomid)
@@ -160,12 +183,15 @@ func (r *Rooms) Broadcast(roomid string, msg []byte) {
 	}
 	return
 }
+
+// NewRooms create new rooms manager.
 func NewRooms() *Rooms {
 	return &Rooms{
 		Errors: make(chan *BroadcastError),
 	}
 }
 
+//Joinable  interfacer for which can joined as room manager.
 type Joinable interface {
 	Join(roomid string, conn connections.OutputConnection)
 	Leave(roomid string, conn connections.OutputConnection)
