@@ -40,3 +40,7 @@ func (c *Contexts) Context(id string) *ConnContext {
 	}
 	return v.(*ConnContext)
 }
+
+func New() *Contexts {
+	return &Contexts{}
+}
