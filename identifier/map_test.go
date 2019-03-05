@@ -10,3 +10,7 @@ func TestInterface(t *testing.T) {
 		t.Error(&f)
 	}
 }
+
+func TestMap(t *testing.T) {
+
+}
