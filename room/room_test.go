@@ -131,4 +131,8 @@ func TestRoom(t *testing.T) {
 	if bytes.Compare(bs, testmsg) != 0 {
 		t.Fatal(bs)
 	}
+	bs, _ = readBytesChan(dummyconn2.Output)
+	if bytes.Compare(bs, testmsg2) != 0 {
+		t.Fatal(bs)
+	}
 }

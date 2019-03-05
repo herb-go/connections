@@ -70,11 +70,11 @@ func (m *Map) Logout(id string, c connections.OutputConnection) error {
 //Verify if user given by id is useing given connection.
 //Return verify result and any error raised.
 func (m *Map) Verify(id string, conn connections.OutputConnection) (bool, error) {
-	conn, ok := m.conn(id)
+	c, ok := m.conn(id)
 	if ok == false {
 		return false, nil
 	}
-	return conn.ID() == id, nil
+	return conn.ID() == c.ID(), nil
 }
 
 //SendByID send message to given user.
@@ -97,9 +97,9 @@ func (m *Map) SetOnLogout(f func(id string, conn connections.OutputConnection) e
 	m.onLogout = f
 }
 
-// NewMap create new map  identifier
+// New create new map  identifier
 // Logout callback of identifier will be gererated by  GenerateDefaultMapOnLogout.
-func NewMap() *Map {
+func New() *Map {
 	m := &Map{
 		Identities: sync.Map{},
 	}

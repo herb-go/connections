@@ -7,6 +7,28 @@ import (
 	"github.com/herb-go/connections"
 )
 
+var errDecodeError = errors.New("deode error")
+var errUnmarshaler = func(msg []byte) (Command, error) {
+	return nil, errDecodeError
+}
+
+func TestWrapError(t *testing.T) {
+	hs := NewHandlers()
+	var conn *connections.Conn
+	werr := hs.WrapError(conn, nil)
+	if werr != nil {
+		t.Fatal(werr)
+	}
+	hs.Unmarshaler = errUnmarshaler
+	msg := &connections.Message{
+		Conn:    nil,
+		Message: []byte{},
+	}
+	_, _, werr = hs.Exec(msg)
+	if werr == nil || werr.Error != errDecodeError {
+		t.Fatal(werr)
+	}
+}
 func TestHandler(t *testing.T) {
 	var dummyconn = connections.NewDummyConnection()
 	g := connections.NewGateway()
