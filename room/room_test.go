@@ -2,11 +2,22 @@ package room
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/herb-go/connections"
 )
+
+var errConnectionSend = errors.New("connection send")
+
+type errorDummyConnection struct {
+	*connections.DummyConnection
+}
+
+func (c *errorDummyConnection) Send(msg []byte) error {
+	return errConnectionSend
+}
 
 type testConsumer struct {
 	connections.EmptyConsumer
@@ -134,5 +145,40 @@ func TestRoom(t *testing.T) {
 	bs, _ = readBytesChan(dummyconn2.Output)
 	if bytes.Compare(bs, testmsg2) != 0 {
 		t.Fatal(bs)
+	}
+
+	errconnection := &errorDummyConnection{
+		DummyConnection: connections.NewDummyConnection(),
+	}
+	connerr, err := g.Register(errconnection)
+	if err != nil {
+		t.Fatal(errconnection)
+	}
+	rooms.Join(testroomid2, connerr)
+	rooms.Broadcast(testroomid2, testmsg2)
+	rerr := <-rooms.Errors
+	if rerr == nil || rerr.Room.ID != testroomid2 || rerr.Conn != connerr {
+		t.Fatal(rerr)
+	}
+	r, ok := rooms.Rooms.Load(testroomid1)
+	if ok == false {
+		t.Fatal(ok)
+	}
+	ok = r.(*Room).Join(conn2)
+	if ok {
+		t.Fatal(ok)
+	}
+	ok = r.(*Room).Leave(conn2)
+	if !ok {
+		t.Fatal(ok)
+	}
+	ok = r.(*Room).Join(conn2)
+	if !ok {
+		t.Fatal(ok)
+	}
+
+	ok = r.(*Room).Leave(connerr)
+	if ok {
+		t.Fatal(ok)
 	}
 }

@@ -179,7 +179,10 @@ func (r *Rooms) Broadcast(roomid string, msg []byte) {
 	room = v.(*Room)
 	errs := room.Broadcast(msg)
 	for i := range errs {
-		r.Errors <- errs[i]
+		err := errs[i]
+		go func() {
+			r.Errors <- err
+		}()
 	}
 	return
 }
