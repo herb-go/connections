@@ -47,6 +47,8 @@ type InputService interface {
 	OnCloseEventsChan() chan OutputConnection
 	//OnOpenEventsChan return connection on open events chan.
 	OnOpenEventsChan() chan OutputConnection
+	//C close chan
+	C() chan bool
 }
 
 //Info connection info struct

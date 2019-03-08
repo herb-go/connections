@@ -2,6 +2,7 @@ package connections
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/satori/go.uuid"
@@ -25,6 +26,8 @@ func NewGateway() *Gateway {
 		errors:        make(chan *Error),
 		onCloseEvents: make(chan OutputConnection),
 		onOpenEvents:  make(chan OutputConnection),
+		c:             make(chan bool),
+		closed:        0,
 	}
 }
 
@@ -44,17 +47,47 @@ type Gateway struct {
 	onCloseEvents chan OutputConnection
 	//onOpenEvents connection open event chan
 	onOpenEvents chan OutputConnection
+	// c close signal chan
+	c chan bool
+	//closed  if gateway closed
+	closed int32
+}
+
+// C return close chan.
+func (g *Gateway) C() chan bool {
+	return g.c
+}
+
+//Stop close gate way and close gate close chan.
+func (g *Gateway) Stop() {
+	if atomic.LoadInt32(&g.closed) != 0 {
+		return
+	}
+	atomic.StoreInt32(&g.closed, 1)
+	close(g.C())
+	go func() {
+		g.Connections.Range(func(key interface{}, value interface{}) bool {
+			value.(Conn).Close()
+			return true
+		})
+	}()
+}
+func (g *Gateway) isClosed() bool {
+	return atomic.LoadInt32(&g.closed) != 0
+}
+func (g *Gateway) close() {
+	atomic.StoreInt32(&g.closed, 1)
 }
 
 //Register register raw connection to gateway.
 //Return connection and any error if raised.
-func (m *Gateway) Register(conn RawConnection) (*Conn, error) {
-	id, err := m.IDGenerator()
+func (g *Gateway) Register(conn RawConnection) (*Conn, error) {
+	id, err := g.IDGenerator()
 	if err != nil {
 		return nil, err
 	}
-	if m.ID != "" {
-		id = m.ID + "-" + id
+	if g.ID != "" {
+		id = g.ID + "-" + id
 	}
 	r := &Conn{
 		RawConnection: conn,
@@ -64,28 +97,37 @@ func (m *Gateway) Register(conn RawConnection) (*Conn, error) {
 		},
 	}
 
-	_, loaded := m.Connections.LoadOrStore(id, r)
+	_, loaded := g.Connections.LoadOrStore(id, r)
 	if loaded {
 		r.Close()
 		return nil, ErrConnIDDuplicated
 	}
 	go func() {
-		m.onOpenEvents <- r
+		if g.isClosed() {
+			return
+		}
+		g.onOpenEvents <- r
 	}()
 	go func() {
 		defer func() {
-			m.Connections.Delete(r.Info.ID)
+			g.Connections.Delete(r.Info.ID)
 		}()
 	Listener:
 		for {
 			select {
 			case message := <-conn.MessagesChan():
-				m.messages <- &Message{
+				if g.isClosed() {
+					return
+				}
+				g.messages <- &Message{
 					Message: message,
 					Conn:    r,
 				}
 			case err := <-conn.ErrorsChan():
-				m.errors <- &Error{
+				if g.isClosed() {
+					return
+				}
+				g.errors <- &Error{
 					Error: err,
 					Conn:  r,
 				}
@@ -94,7 +136,10 @@ func (m *Gateway) Register(conn RawConnection) (*Conn, error) {
 			}
 		}
 		go func() {
-			m.onCloseEvents <- r
+			if g.isClosed() {
+				return
+			}
+			g.onCloseEvents <- r
 		}()
 	}()
 	return r, nil
@@ -102,8 +147,8 @@ func (m *Gateway) Register(conn RawConnection) (*Conn, error) {
 
 //Conn get connection by id.
 //Return nil if connection not registered.
-func (m *Gateway) Conn(id string) *Conn {
-	val, ok := m.Connections.Load(id)
+func (g *Gateway) Conn(id string) *Conn {
+	val, ok := g.Connections.Load(id)
 	if ok == false {
 		return nil
 	}
@@ -113,8 +158,8 @@ func (m *Gateway) Conn(id string) *Conn {
 
 //Send send message to connection by given id.
 //Return and error if raised.
-func (m *Gateway) Send(id string, msg []byte) error {
-	c := m.Conn(id)
+func (g *Gateway) Send(id string, msg []byte) error {
+	c := g.Conn(id)
 	if c == nil {
 		return nil
 	}
@@ -123,8 +168,8 @@ func (m *Gateway) Send(id string, msg []byte) error {
 
 //Close connection by given id.
 //Return any error if raised.
-func (m *Gateway) Close(id string) error {
-	c := m.Conn(id)
+func (g *Gateway) Close(id string) error {
+	c := g.Conn(id)
 	if c == nil {
 		return nil
 	}
@@ -132,21 +177,21 @@ func (m *Gateway) Close(id string) error {
 }
 
 //MessagesChan return connection message  chan.
-func (m *Gateway) MessagesChan() chan *Message {
-	return m.messages
+func (g *Gateway) MessagesChan() chan *Message {
+	return g.messages
 }
 
 //ErrorsChan return connection error chan.
-func (m *Gateway) ErrorsChan() chan *Error {
-	return m.errors
+func (g *Gateway) ErrorsChan() chan *Error {
+	return g.errors
 }
 
 //OnCloseEventsChan return closed event chan.
-func (m *Gateway) OnCloseEventsChan() chan OutputConnection {
-	return m.onCloseEvents
+func (g *Gateway) OnCloseEventsChan() chan OutputConnection {
+	return g.onCloseEvents
 }
 
 //OnOpenEventsChan return open event chan.
-func (m *Gateway) OnOpenEventsChan() chan OutputConnection {
-	return m.onOpenEvents
+func (g *Gateway) OnOpenEventsChan() chan OutputConnection {
+	return g.onOpenEvents
 }

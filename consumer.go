@@ -10,6 +10,8 @@ type Consumer interface {
 	OnClose(OutputConnection)
 	//OnOpen called when connection open.
 	OnOpen(OutputConnection)
+	// Stop stop consumer
+	Stop()
 }
 
 //EmptyConsumer empty consumer  implemented all  required method.
@@ -37,10 +39,20 @@ func (e EmptyConsumer) OnOpen(OutputConnection) {
 
 }
 
+// Stop stop consumer
+func (e EmptyConsumer) Stop() {
+
+}
+
 // Consume consume input service with given consumer.
 func Consume(i InputService, c Consumer) {
 	for {
 		select {
+		case <-i.C():
+			go func() {
+				c.Stop()
+			}()
+			return
 		case m := <-i.MessagesChan():
 			go func() {
 				c.OnMessage(m)
