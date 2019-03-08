@@ -38,9 +38,9 @@ func TestMap(t *testing.T) {
 	var testmsg = []byte("testmsg")
 	m := New()
 	g := connections.NewGateway()
-	dummyconn := connections.NewDummyConnection()
-	dummyconn2 := connections.NewDummyConnection()
-	dummyconn3 := connections.NewDummyConnection()
+	chanconn := connections.NewChanConnection()
+	chanconn2 := connections.NewChanConnection()
+	chanconn3 := connections.NewChanConnection()
 
 	uidtest := "test"
 	uidnotexist := "testnotexist"
@@ -52,15 +52,15 @@ func TestMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	conn, err := g.Register(dummyconn)
+	conn, err := g.Register(chanconn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	conn2, err := g.Register(dummyconn2)
+	conn2, err := g.Register(chanconn2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	conn3, err := g.Register(dummyconn3)
+	conn3, err := g.Register(chanconn3)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +86,7 @@ func TestMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	msg := <-dummyconn.Output
+	msg := <-chanconn.Output
 	if bytes.Compare(msg, testmsg) != 0 {
 		t.Fatal(m)
 	}
@@ -154,13 +154,13 @@ func TestMap(t *testing.T) {
 		t.Fatal(ok)
 	}
 
-	if !dummyconn.Closed {
-		t.Fatal(dummyconn.Closed)
+	if !chanconn.Closed {
+		t.Fatal(chanconn.Closed)
 	}
-	if !dummyconn2.Closed {
-		t.Fatal(dummyconn2.Closed)
+	if !chanconn2.Closed {
+		t.Fatal(chanconn2.Closed)
 	}
-	if dummyconn3.Closed {
-		t.Fatal(dummyconn3.Closed)
+	if chanconn3.Closed {
+		t.Fatal(chanconn3.Closed)
 	}
 }

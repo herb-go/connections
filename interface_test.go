@@ -25,7 +25,7 @@ func TestInterface(t *testing.T) {
 		t.Error(consumer)
 	}
 	var rc RawConnection
-	rc = NewDummyConnection()
+	rc = NewChanConnection()
 	if rc == nil {
 		t.Error(rc)
 	}

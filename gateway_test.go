@@ -19,10 +19,10 @@ func TestErrConnIDDuplicated(t *testing.T) {
 	var err error
 	g := NewGateway()
 	g.IDGenerator = duplicatedIDGenerator
-	dummyconn1 := NewDummyConnection()
-	dummyconn2 := NewDummyConnection()
+	chanconn1 := NewChanConnection()
+	chanconn2 := NewChanConnection()
 	go func() {
-		conn, err = g.Register(dummyconn1)
+		conn, err = g.Register(chanconn1)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -36,7 +36,7 @@ func TestErrConnIDDuplicated(t *testing.T) {
 	}()
 	time.Sleep(time.Microsecond)
 	go func() {
-		_, err = g.Register(dummyconn2)
+		_, err = g.Register(chanconn2)
 		if err != ErrConnIDDuplicated {
 			t.Fatal(err)
 		}
@@ -50,7 +50,7 @@ func TestErrConnIDDuplicated(t *testing.T) {
 
 	}()
 	time.Sleep(time.Microsecond)
-	dummyconn1.ClientSend(testmsg)
+	chanconn1.ClientSend(testmsg)
 	m, more := readMessageChan(g.MessagesChan())
 	if more != true {
 		t.Fatal(more)
@@ -64,8 +64,8 @@ func TestErrConnIDDuplicated(t *testing.T) {
 	if bytes.Compare(m.Message, testmsg) != 0 {
 		t.Fatal(m.Message)
 	}
-	if dummyconn2.Closed != true {
-		t.Fatal(dummyconn2.Closed)
+	if chanconn2.Closed != true {
+		t.Fatal(chanconn2.Closed)
 	}
 }
 
@@ -78,9 +78,9 @@ func TestGateway(t *testing.T) {
 	g := NewGateway()
 	g.ID = "test"
 	time.Sleep(time.Microsecond)
-	dummyconn := NewDummyConnection()
+	chanconn := NewChanConnection()
 	go func() {
-		conn, err = g.Register(dummyconn)
+		conn, err = g.Register(chanconn)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -92,7 +92,7 @@ func TestGateway(t *testing.T) {
 			t.Fatal(conn)
 		}
 	}()
-	dummyconn.ClientSend(testmsg)
+	chanconn.ClientSend(testmsg)
 	m, more := readMessageChan(g.MessagesChan())
 	if more != true {
 		t.Fatal(more)
@@ -114,14 +114,14 @@ func TestGateway(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bs, ok := readBytesChan(dummyconn.Output)
+	bs, ok := readBytesChan(chanconn.Output)
 	if ok != true {
 		t.Fatal(ok)
 	}
 	if bytes.Compare(bs, testbackmsg) != 0 {
 		t.Fatal(bs)
 	}
-	dummyconn.RaiseError(testerror)
+	chanconn.RaiseError(testerror)
 
 	e, ok := readErrorChan(g.ErrorsChan())
 	if ok != true {
@@ -141,9 +141,9 @@ func TestGateway(t *testing.T) {
 		t.Fatal(conn.ID())
 	}
 
-	dummyconn.Addr = &net.IPAddr{}
+	chanconn.Addr = &net.IPAddr{}
 
-	if conn.RemoteAddr() != dummyconn.Addr {
+	if conn.RemoteAddr() != chanconn.Addr {
 		t.Fatal(conn.RemoteAddr())
 	}
 	g.Close(conn.ID())
@@ -155,7 +155,7 @@ func TestGateway(t *testing.T) {
 	if c != conn {
 		t.Fatal(conn)
 	}
-	if dummyconn.Closed != true {
-		t.Fatal(dummyconn.Closed)
+	if chanconn.Closed != true {
+		t.Fatal(chanconn.Closed)
 	}
 }

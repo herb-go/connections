@@ -40,12 +40,12 @@ func TestConsumer(t *testing.T) {
 	var testerror = errors.New("test error")
 	var tc = &testConsumer{}
 	var g = NewGateway()
-	var dummyconn = NewDummyConnection()
+	var chanconn = NewChanConnection()
 	go func() {
 		Consume(g, tc)
 	}()
 	time.Sleep(time.Millisecond)
-	conn, err := g.Register(dummyconn)
+	conn, err := g.Register(chanconn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestConsumer(t *testing.T) {
 	if tc.lastOpen != conn {
 		t.Fatal(tc.lastOpen)
 	}
-	err = dummyconn.ClientSend(testmsg)
+	err = chanconn.ClientSend(testmsg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestConsumer(t *testing.T) {
 		t.Fatal(tc.lastMessage.Message)
 	}
 
-	dummyconn.RaiseError(testerror)
+	chanconn.RaiseError(testerror)
 	time.Sleep(time.Millisecond)
 	if tc.lastError == nil {
 		t.Error(tc.lastError)
@@ -83,7 +83,7 @@ func TestConsumer(t *testing.T) {
 	if tc.lastError.Error != testerror {
 		t.Error(tc.lastError.Error)
 	}
-	dummyconn.Close()
+	chanconn.Close()
 	time.Sleep(time.Millisecond)
 	if tc.lastClose != conn {
 		t.Fatal(tc.lastClose)

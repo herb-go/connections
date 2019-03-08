@@ -11,11 +11,11 @@ import (
 
 var errConnectionSend = errors.New("connection send")
 
-type errorDummyConnection struct {
-	*connections.DummyConnection
+type errorChanConnection struct {
+	*connections.ChanConnection
 }
 
-func (c *errorDummyConnection) Send(msg []byte) error {
+func (c *errorChanConnection) Send(msg []byte) error {
 	return errConnectionSend
 }
 
@@ -45,15 +45,15 @@ func TestRoom(t *testing.T) {
 	go func() {
 		connections.Consume(g, tc)
 	}()
-	var dummyconn1 = connections.NewDummyConnection()
-	var dummyconn2 = connections.NewDummyConnection()
-	conn1, err := g.Register(dummyconn1)
+	var chanconn1 = connections.NewChanConnection()
+	var chanconn2 = connections.NewChanConnection()
+	conn1, err := g.Register(chanconn1)
 	if err != nil {
-		t.Fatal(dummyconn1)
+		t.Fatal(chanconn1)
 	}
-	conn2, err := g.Register(dummyconn2)
+	conn2, err := g.Register(chanconn2)
 	if err != nil {
-		t.Fatal(dummyconn2)
+		t.Fatal(chanconn2)
 	}
 
 	time.Sleep(time.Millisecond)
@@ -67,39 +67,39 @@ func TestRoom(t *testing.T) {
 		t.Fatal(membernotexsit)
 	}
 	rooms.Broadcast(testroomid1, testmsg)
-	bs, _ := readBytesChan(dummyconn1.Output)
+	bs, _ := readBytesChan(chanconn1.Output)
 	if bytes.Compare(bs, testmsg) != 0 {
 		t.Fatal(bs)
 	}
-	bs, _ = readBytesChan(dummyconn2.Output)
+	bs, _ = readBytesChan(chanconn2.Output)
 	if bs != nil {
 		t.Fatal(bs)
 	}
 	rooms.Broadcast(testroomid2, testmsg2)
-	bs, _ = readBytesChan(dummyconn1.Output)
+	bs, _ = readBytesChan(chanconn1.Output)
 	if bs != nil {
 		t.Fatal(bs)
 	}
-	bs, _ = readBytesChan(dummyconn2.Output)
+	bs, _ = readBytesChan(chanconn2.Output)
 	if bytes.Compare(bs, testmsg2) != 0 {
 		t.Fatal(bs)
 	}
 	location2.Leave(testroomid2)
-	bs, _ = readBytesChan(dummyconn2.Output)
+	bs, _ = readBytesChan(chanconn2.Output)
 	if bs != nil {
 		t.Fatal(bs)
 	}
-	bs, _ = readBytesChan(dummyconn2.Output)
+	bs, _ = readBytesChan(chanconn2.Output)
 	if bs != nil {
 		t.Fatal(bs)
 	}
 	location2.Join(testroomid1)
 	rooms.Broadcast(testroomid1, testmsg)
-	bs, _ = readBytesChan(dummyconn1.Output)
+	bs, _ = readBytesChan(chanconn1.Output)
 	if bytes.Compare(bs, testmsg) != 0 {
 		t.Fatal(bs)
 	}
-	bs, _ = readBytesChan(dummyconn2.Output)
+	bs, _ = readBytesChan(chanconn2.Output)
 	if bytes.Compare(bs, testmsg) != 0 {
 		t.Fatal(bs)
 	}
@@ -110,19 +110,19 @@ func TestRoom(t *testing.T) {
 	location1.Join(testroomid2)
 	rooms.Broadcast(testroomid1, testmsg)
 	rooms.Broadcast(testroomid2, testmsg2)
-	bs, _ = readBytesChan(dummyconn1.Output)
+	bs, _ = readBytesChan(chanconn1.Output)
 	if bytes.Compare(bs, testmsg) != 0 {
 		t.Fatal(bs)
 	}
-	bs, _ = readBytesChan(dummyconn1.Output)
+	bs, _ = readBytesChan(chanconn1.Output)
 	if bytes.Compare(bs, testmsg2) != 0 {
 		t.Fatal(bs)
 	}
-	bs, _ = readBytesChan(dummyconn2.Output)
+	bs, _ = readBytesChan(chanconn2.Output)
 	if bytes.Compare(bs, testmsg2) != 0 {
 		t.Fatal(bs)
 	}
-	bs, _ = readBytesChan(dummyconn2.Output)
+	bs, _ = readBytesChan(chanconn2.Output)
 	if bs != nil {
 		t.Fatal(bs)
 	}
@@ -138,17 +138,17 @@ func TestRoom(t *testing.T) {
 	location1.LeaveAll()
 	rooms.Broadcast(testroomid1, testmsg)
 	rooms.Broadcast(testroomid2, testmsg2)
-	bs, _ = readBytesChan(dummyconn1.Output)
+	bs, _ = readBytesChan(chanconn1.Output)
 	if bytes.Compare(bs, testmsg) != 0 {
 		t.Fatal(bs)
 	}
-	bs, _ = readBytesChan(dummyconn2.Output)
+	bs, _ = readBytesChan(chanconn2.Output)
 	if bytes.Compare(bs, testmsg2) != 0 {
 		t.Fatal(bs)
 	}
 
-	errconnection := &errorDummyConnection{
-		DummyConnection: connections.NewDummyConnection(),
+	errconnection := &errorChanConnection{
+		ChanConnection: connections.NewChanConnection(),
 	}
 	connerr, err := g.Register(errconnection)
 	if err != nil {

@@ -30,12 +30,12 @@ func TestWrapError(t *testing.T) {
 	}
 }
 func TestHandler(t *testing.T) {
-	var dummyconn = connections.NewDummyConnection()
+	var chanconn = connections.NewChanConnection()
 	g := connections.NewGateway()
 	go func() {
 		connections.Consume(g, connections.EmptyConsumer{})
 	}()
-	var conn, err = g.Register(dummyconn)
+	var conn, err = g.Register(chanconn)
 	if err != nil {
 		t.Fatal(err)
 	}

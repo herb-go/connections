@@ -5,10 +5,10 @@ import (
 	"sync"
 )
 
-//NewDummyConnection create new dummy connection.
-//Return dummy connection created.
-func NewDummyConnection() *DummyConnection {
-	return &DummyConnection{
+//NewChanConnection create new chan connection.
+//Return chan connection created.
+func NewChanConnection() *ChanConnection {
+	return &ChanConnection{
 		messages: make(chan []byte, 10),
 		Output:   make(chan []byte, 10),
 		errors:   make(chan error, 10),
@@ -16,8 +16,8 @@ func NewDummyConnection() *DummyConnection {
 	}
 }
 
-//DummyConnection dummy connection for testing
-type DummyConnection struct {
+//ChanConnection chan connection
+type ChanConnection struct {
 	Addr     net.Addr
 	messages chan []byte
 	Output   chan []byte
@@ -29,7 +29,7 @@ type DummyConnection struct {
 
 //Close close connection.
 //Return any error if raised.
-func (c *DummyConnection) Close() error {
+func (c *ChanConnection) Close() error {
 	c.Lock.Lock()
 	defer c.Lock.Unlock()
 	close(c.c)
@@ -39,14 +39,14 @@ func (c *DummyConnection) Close() error {
 
 //Send send message to connction.
 //return any error if raised.
-func (c *DummyConnection) Send(msg []byte) error {
+func (c *ChanConnection) Send(msg []byte) error {
 	c.Output <- msg
 	return nil
 }
 
 //ClientSend Send send message to connction from client.
 //return any error if raised.
-func (c *DummyConnection) ClientSend(msg []byte) error {
+func (c *ChanConnection) ClientSend(msg []byte) error {
 	go func() {
 		c.messages <- msg
 	}()
@@ -54,26 +54,26 @@ func (c *DummyConnection) ClientSend(msg []byte) error {
 }
 
 //MessagesChan connection message chan
-func (c *DummyConnection) MessagesChan() chan []byte {
+func (c *ChanConnection) MessagesChan() chan []byte {
 	return c.messages
 }
 
 //ErrorsChan connection error chan.
-func (c *DummyConnection) ErrorsChan() chan error {
+func (c *ChanConnection) ErrorsChan() chan error {
 	return c.errors
 }
 
 //RemoteAddr return connection rempte address.
-func (c *DummyConnection) RemoteAddr() net.Addr {
+func (c *ChanConnection) RemoteAddr() net.Addr {
 	return c.Addr
 }
 
 //C connection close signal chan.
-func (c *DummyConnection) C() chan int {
+func (c *ChanConnection) C() chan int {
 	return c.c
 }
 
-//RaiseError raise en error to connection
-func (c *DummyConnection) RaiseError(err error) {
+//RaiseError raise an error to connection
+func (c *ChanConnection) RaiseError(err error) {
 	c.errors <- err
 }

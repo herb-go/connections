@@ -11,7 +11,7 @@ func TestContexts(t *testing.T) {
 	var testkey = "test"
 	var testvalue = "testvalue"
 	g := connections.NewGateway()
-	dummyconn := connections.NewDummyConnection()
+	chanconn := connections.NewChanConnection()
 	var conn *connections.Conn
 	var err error
 	contexts := New()
@@ -19,7 +19,7 @@ func TestContexts(t *testing.T) {
 		connections.Consume(g, contexts)
 	}()
 	go func() {
-		conn, err = g.Register(dummyconn)
+		conn, err = g.Register(chanconn)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -32,7 +32,7 @@ func TestContexts(t *testing.T) {
 	if v.(string) != testvalue {
 		t.Fatal(v)
 	}
-	dummyconn.Close()
+	chanconn.Close()
 	time.Sleep(time.Millisecond)
 	c3 := contexts.Context(conn.ID())
 	if c3 != nil {
