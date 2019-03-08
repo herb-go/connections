@@ -67,39 +67,39 @@ func TestRoom(t *testing.T) {
 		t.Fatal(membernotexsit)
 	}
 	rooms.Broadcast(testroomid1, testmsg)
-	bs, _ := readBytesChan(chanconn1.Output)
+	bs, _ := readBytesChan(chanconn1.ClientMessagesChan())
 	if bytes.Compare(bs, testmsg) != 0 {
 		t.Fatal(bs)
 	}
-	bs, _ = readBytesChan(chanconn2.Output)
+	bs, _ = readBytesChan(chanconn2.ClientMessagesChan())
 	if bs != nil {
 		t.Fatal(bs)
 	}
 	rooms.Broadcast(testroomid2, testmsg2)
-	bs, _ = readBytesChan(chanconn1.Output)
+	bs, _ = readBytesChan(chanconn1.ClientMessagesChan())
 	if bs != nil {
 		t.Fatal(bs)
 	}
-	bs, _ = readBytesChan(chanconn2.Output)
+	bs, _ = readBytesChan(chanconn2.ClientMessagesChan())
 	if bytes.Compare(bs, testmsg2) != 0 {
 		t.Fatal(bs)
 	}
 	location2.Leave(testroomid2)
-	bs, _ = readBytesChan(chanconn2.Output)
+	bs, _ = readBytesChan(chanconn2.ClientMessagesChan())
 	if bs != nil {
 		t.Fatal(bs)
 	}
-	bs, _ = readBytesChan(chanconn2.Output)
+	bs, _ = readBytesChan(chanconn2.ClientMessagesChan())
 	if bs != nil {
 		t.Fatal(bs)
 	}
 	location2.Join(testroomid1)
 	rooms.Broadcast(testroomid1, testmsg)
-	bs, _ = readBytesChan(chanconn1.Output)
+	bs, _ = readBytesChan(chanconn1.ClientMessagesChan())
 	if bytes.Compare(bs, testmsg) != 0 {
 		t.Fatal(bs)
 	}
-	bs, _ = readBytesChan(chanconn2.Output)
+	bs, _ = readBytesChan(chanconn2.ClientMessagesChan())
 	if bytes.Compare(bs, testmsg) != 0 {
 		t.Fatal(bs)
 	}
@@ -110,19 +110,19 @@ func TestRoom(t *testing.T) {
 	location1.Join(testroomid2)
 	rooms.Broadcast(testroomid1, testmsg)
 	rooms.Broadcast(testroomid2, testmsg2)
-	bs, _ = readBytesChan(chanconn1.Output)
+	bs, _ = readBytesChan(chanconn1.ClientMessagesChan())
 	if bytes.Compare(bs, testmsg) != 0 {
 		t.Fatal(bs)
 	}
-	bs, _ = readBytesChan(chanconn1.Output)
+	bs, _ = readBytesChan(chanconn1.ClientMessagesChan())
 	if bytes.Compare(bs, testmsg2) != 0 {
 		t.Fatal(bs)
 	}
-	bs, _ = readBytesChan(chanconn2.Output)
+	bs, _ = readBytesChan(chanconn2.ClientMessagesChan())
 	if bytes.Compare(bs, testmsg2) != 0 {
 		t.Fatal(bs)
 	}
-	bs, _ = readBytesChan(chanconn2.Output)
+	bs, _ = readBytesChan(chanconn2.ClientMessagesChan())
 	if bs != nil {
 		t.Fatal(bs)
 	}
@@ -138,11 +138,11 @@ func TestRoom(t *testing.T) {
 	location1.LeaveAll()
 	rooms.Broadcast(testroomid1, testmsg)
 	rooms.Broadcast(testroomid2, testmsg2)
-	bs, _ = readBytesChan(chanconn1.Output)
+	bs, _ = readBytesChan(chanconn1.ClientMessagesChan())
 	if bytes.Compare(bs, testmsg) != 0 {
 		t.Fatal(bs)
 	}
-	bs, _ = readBytesChan(chanconn2.Output)
+	bs, _ = readBytesChan(chanconn2.ClientMessagesChan())
 	if bytes.Compare(bs, testmsg2) != 0 {
 		t.Fatal(bs)
 	}

@@ -114,7 +114,7 @@ func TestGateway(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	bs, ok := readBytesChan(chanconn.Output)
+	bs, ok := readBytesChan(chanconn.ClientMessagesChan())
 	if ok != true {
 		t.Fatal(ok)
 	}

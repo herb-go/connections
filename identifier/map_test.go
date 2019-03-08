@@ -86,7 +86,7 @@ func TestMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	msg := <-chanconn.Output
+	msg := <-chanconn.ClientMessagesChan()
 	if bytes.Compare(msg, testmsg) != 0 {
 		t.Fatal(m)
 	}
