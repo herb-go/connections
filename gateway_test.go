@@ -159,8 +159,25 @@ func TestGateway(t *testing.T) {
 	if chanconn.Closed != true {
 		t.Fatal(chanconn.Closed)
 	}
-	g.Stop()
+	chanconn = NewChanConnection()
+	conn, err = g.Register(chanconn)
+	if err != nil {
+		t.Fatal(err)
+	}
 	time.Sleep(time.Millisecond)
+	if chanconn.Closed == true {
+		t.Fatal(chanconn.Closed)
+	}
+	g.Stop()
+	g.Stop()
+	_, more = readConnChan(g.OnOpenEventsChan())
+	if more != true {
+		t.Fatal(more)
+	}
+	time.Sleep(time.Millisecond)
+	if chanconn.Closed == false {
+		t.Fatal(chanconn.Closed)
+	}
 	chanconn = NewChanConnection()
 	go func() {
 		conn, err = g.Register(chanconn)
@@ -193,5 +210,4 @@ func TestGateway(t *testing.T) {
 	if more != false {
 		t.Fatal(more)
 	}
-
 }

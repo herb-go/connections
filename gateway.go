@@ -60,14 +60,14 @@ func (g *Gateway) C() chan bool {
 
 //Stop close gate way and close gate close chan.
 func (g *Gateway) Stop() {
-	if atomic.LoadInt32(&g.closed) != 0 {
+	if g.isClosed() {
 		return
 	}
-	atomic.StoreInt32(&g.closed, 1)
+	g.close()
 	close(g.C())
 	go func() {
 		g.Connections.Range(func(key interface{}, value interface{}) bool {
-			value.(Conn).Close()
+			value.(*Conn).Close()
 			return true
 		})
 	}()
