@@ -12,6 +12,10 @@ import (
 var duplicatedIDGenerator = func() (string, error) {
 	return "duplicated id", nil
 }
+var errID = errors.New("ID")
+var errIDGenerator = func() (string, error) {
+	return "error", errID
+}
 
 func TestErrConnIDDuplicated(t *testing.T) {
 	var testmsg = []byte("test")
@@ -34,7 +38,7 @@ func TestErrConnIDDuplicated(t *testing.T) {
 			t.Fatal(conn)
 		}
 	}()
-	time.Sleep(time.Microsecond)
+	time.Sleep(time.Millisecond)
 	go func() {
 		_, err = g.Register(chanconn2)
 		if err != ErrConnIDDuplicated {
@@ -68,15 +72,41 @@ func TestErrConnIDDuplicated(t *testing.T) {
 		t.Fatal(chanconn2.Closed)
 	}
 }
-
+func TestErrConnID(t *testing.T) {
+	var conn *Conn
+	var err error
+	g := NewGateway()
+	g.IDGenerator = errIDGenerator
+	chanconn := NewChanConnection()
+	conn, err = g.Register(chanconn)
+	if conn != nil {
+		t.Fatal(conn)
+	}
+	if err != errID {
+		t.Fatal(err)
+	}
+}
 func TestGateway(t *testing.T) {
 	var testmsg = []byte("test")
 	var testbackmsg = []byte("testback")
 	var testerror = errors.New("test")
 	var conn *Conn
 	var err error
+	var connIDNotExists = "notexists"
 	g := NewGateway()
 	g.ID = "test"
+	conn = g.Conn(connIDNotExists)
+	if conn != nil {
+		t.Fatal(conn)
+	}
+	err = g.Send(connIDNotExists, testbackmsg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = g.Close(connIDNotExists)
+	if err != nil {
+		t.Fatal(err)
+	}
 	time.Sleep(time.Microsecond)
 	chanconn := NewChanConnection()
 	go func() {

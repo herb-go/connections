@@ -13,6 +13,7 @@ type testConsumer struct {
 	lastError   *Error
 	lastOpen    OutputConnection
 	lastClose   OutputConnection
+	stoped      bool
 }
 
 //OnMessage called when connection message received.
@@ -33,6 +34,11 @@ func (c *testConsumer) OnClose(oc OutputConnection) {
 //OnOpen called when connection open.
 func (c *testConsumer) OnOpen(oc OutputConnection) {
 	c.lastOpen = oc
+}
+
+// Stop stop consumer
+func (c *testConsumer) Stop() {
+	c.stoped = true
 }
 
 func TestConsumer(t *testing.T) {
@@ -87,5 +93,13 @@ func TestConsumer(t *testing.T) {
 	time.Sleep(time.Millisecond)
 	if tc.lastClose != conn {
 		t.Fatal(tc.lastClose)
+	}
+	if tc.stoped != false {
+		t.Fatal(tc.stoped)
+	}
+	g.Stop()
+	time.Sleep(time.Millisecond)
+	if tc.stoped != true {
+		t.Fatal(tc.stoped)
 	}
 }
