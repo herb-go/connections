@@ -26,3 +26,4 @@ debug
 .vscode/launch.json
 testconfig_test.go
 .vscode
+.directory
