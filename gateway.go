@@ -1,21 +1,27 @@
 package connections
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/binary"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/satori/go.uuid"
 )
 
+var currentGenerated = uint32(0)
+
 //DefaultIDGenerator default  generator.
-//Return uuid string and any error if raised.
+//Return id string and any error if raised.
 var DefaultIDGenerator = func() (string, error) {
-	unid, err := uuid.NewV1()
+	buf := bytes.NewBuffer(nil)
+	err := binary.Write(buf, binary.BigEndian, time.Now().UnixNano())
 	if err != nil {
 		return "", err
 	}
-	return unid.String(), nil
+	c := atomic.AddUint32(&currentGenerated, 1)
+	err = binary.Write(buf, binary.BigEndian, c)
+	return base64.StdEncoding.EncodeToString(buf.Bytes()), nil
 }
 
 //NewGateway create new gateway
