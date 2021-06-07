@@ -4,8 +4,8 @@ package message
 type Adapter map[string]func(*Message) error
 
 //Register register message handler  by given type.
-func (a Adapter) Register(msgtype string, handler func(*Message) error) {
-	a[msgtype] = handler
+func (a *Adapter) Register(msgtype string, handler func(*Message) error) {
+	(*a)[msgtype] = handler
 }
 
 //Exec exec message.
@@ -23,6 +23,6 @@ func (a Adapter) Exec(msg *Message) (bool, error) {
 }
 
 // NewAdapter create new message adapter
-func NewAdapter() Adapter {
-	return Adapter{}
+func NewAdapter() *Adapter {
+	return &Adapter{}
 }
