@@ -85,26 +85,26 @@ func (r *Room) Leave(conn connections.OutputConnection) bool {
 
 //Broadcast broadcast message to all connection in room.
 //Return BroadcastError if any error raised.
-func (r *Room) Broadcast(msg []byte) []*BroadcastError {
-	errs := []*BroadcastError{}
+func (r *Room) Broadcast(msg []byte, errHandler func(*BroadcastError)) {
 	e := r.Conns.Front()
 	for {
 		if e == nil {
 			break
 		}
 		c := e.Value.(connections.OutputConnection)
-		err := c.Send(msg)
-		if err != nil {
-			e := &BroadcastError{
-				Error: err,
-				Conn:  c,
-				Room:  r,
+		go func() {
+			err := c.Send(msg)
+			if err != nil {
+				e := &BroadcastError{
+					Error: err,
+					Conn:  c,
+					Room:  r,
+				}
+				errHandler(e)
 			}
-			errs = append(errs, e)
-		}
+		}()
 		e = e.Next()
 	}
-	return errs
 }
 
 // NewRoom create new room.
@@ -168,6 +168,12 @@ func (r *Rooms) Leave(roomid string, conn connections.OutputConnection) {
 	return
 }
 
+func (r *Rooms) handleError(err *BroadcastError) {
+	go func() {
+		r.Errors <- err
+	}()
+}
+
 //Broadcast brodcat message to give room.
 //BroadcastError will be sent to Error chan if any error raised.
 func (r *Rooms) Broadcast(roomid string, msg []byte) {
@@ -177,14 +183,7 @@ func (r *Rooms) Broadcast(roomid string, msg []byte) {
 		return
 	}
 	room = v.(*Room)
-	errs := room.Broadcast(msg)
-	for i := range errs {
-		err := errs[i]
-		go func() {
-			r.Errors <- err
-		}()
-	}
-	return
+	room.Broadcast(msg, r.handleError)
 }
 
 // NewRooms create new rooms manager.
