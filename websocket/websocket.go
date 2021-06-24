@@ -113,9 +113,7 @@ func Upgrade(w http.ResponseWriter, r *http.Request, msgtype int) (*Conn, error)
 			case m := <-c.output:
 				err := c.send(m)
 				if err != nil {
-					go func() {
-						c.errors <- err
-					}()
+					c.errors <- err
 				}
 			case <-c.C():
 				return
