@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -29,12 +30,23 @@ type Conn struct {
 	output      chan []byte
 	errors      chan error
 	c           chan int
+	options     *Options
 }
 
 //Send send message to connction.
 //return any error if raised.
 func (c *Conn) Send(msg []byte) error {
-	c.output <- msg
+
+	c.closelocker.Lock()
+	if !c.closed {
+		c.closelocker.Unlock()
+		select {
+		case c.output <- msg:
+		case <-time.After(c.options.WriteTimeout):
+		}
+	} else {
+		c.closelocker.Unlock()
+	}
 	return nil
 }
 
@@ -58,6 +70,10 @@ func (c *Conn) ErrorsChan() chan error {
 func (c *Conn) Close() error {
 	defer c.closelocker.Unlock()
 	c.closelocker.Lock()
+	return c.doClose()
+}
+
+func (c *Conn) doClose() error {
 	if c.closed {
 		return nil
 	}
@@ -65,13 +81,16 @@ func (c *Conn) Close() error {
 	c.closed = true
 	return c.Conn.Close()
 }
-
 func (c *Conn) send(m []byte) error {
 	c.closelocker.Lock()
-	closed := c.closed
-	c.closelocker.Unlock()
-	if closed {
+	if c.closed {
+		c.closelocker.Unlock()
 		return nil
+	}
+	c.closelocker.Unlock()
+	err := c.Conn.SetWriteDeadline(time.Now().Add(c.options.WriteTimeout))
+	if err != nil {
+		return err
 	}
 	return c.Conn.WriteMessage(c.messageType, m)
 }
@@ -90,41 +109,65 @@ func New() *Conn {
 		messages: make(chan []byte),
 		errors:   make(chan error),
 		output:   make(chan []byte),
+		options:  NewOptions(),
 	}
 }
+
+const DefaultReadTimeout = time.Minute
+const DefaultWriteTimeout = time.Minute
 
 // Upgrader websocket connection upgrader config
 var Upgrader = websocket.Upgrader{}
 
+type Options struct {
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+	MsgType      int
+}
+
+func NewOptions() *Options {
+	return &Options{
+		ReadTimeout:  DefaultReadTimeout,
+		WriteTimeout: DefaultWriteTimeout,
+		MsgType:      websocket.TextMessage,
+	}
+}
+
 //Upgrade Upgrade http requret with given message type to websocket concection.
 //Return websocker connection and any error if raised.
-func Upgrade(w http.ResponseWriter, r *http.Request, msgtype int) (*Conn, error) {
+func Upgrade(w http.ResponseWriter, r *http.Request, opt *Options) (*Conn, error) {
 	wc, err := Upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return nil, err
 	}
 	c := New()
+	if opt != nil {
+		c.options = opt
+	}
 	c.closed = false
 	c.Conn = wc
-	c.messageType = msgtype
+	c.messageType = c.options.MsgType
 	go func() {
 		for {
 			select {
 			case m := <-c.output:
 				err := c.send(m)
 				if err != nil {
-					c.errors <- err
+					// c.errors <- err
+					c.Close()
 				}
 			case <-c.C():
+				// c.closelocker.Lock()
+				// close(c.output)
+				// close(c.errors)
+				// c.closelocker.Unlock()
 				return
 			}
 		}
 	}()
 
 	go func() {
-		defer func() {
 
-		}()
 		defer func() {
 			recover()
 		}()
@@ -136,12 +179,13 @@ func Upgrade(w http.ResponseWriter, r *http.Request, msgtype int) (*Conn, error)
 			if err != nil {
 				c.closelocker.Lock()
 				closed := c.closed
-				c.closelocker.Unlock()
 				if closed {
+					c.closelocker.Unlock()
 					break
 				}
 				if websocket.IsUnexpectedCloseError(err) {
-					c.Close()
+					c.doClose()
+					c.closelocker.Unlock()
 					break
 				}
 				c.errors <- err
