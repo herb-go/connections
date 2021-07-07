@@ -1,6 +1,7 @@
 package room
 
 import (
+	"fmt"
 	"sync"
 
 	"container/list"
@@ -10,12 +11,16 @@ import (
 
 // BroadcastError room broadcast error
 type BroadcastError struct {
-	//Error raw error.
-	Error error
+	//Err raw error.
+	Err error
 	//Conn connections in which error raised.
 	Conn connections.OutputConnection
 	//Room room in which error raised.
 	Room *Room
+}
+
+func (e *BroadcastError) Error() string {
+	return fmt.Sprintf("boradcast error %s", e.Err.Error())
 }
 
 //Room connection room in which all connections will receive broadcast.
@@ -85,7 +90,9 @@ func (r *Room) Leave(conn connections.OutputConnection) bool {
 
 //Broadcast broadcast message to all connection in room.
 //Return BroadcastError if any error raised.
-func (r *Room) Broadcast(msg []byte, errHandler func(*BroadcastError)) {
+func (r *Room) Broadcast(msg []byte, errHandler func(error)) {
+	r.Lock.Lock()
+	defer r.Lock.Unlock()
 	e := r.Conns.Front()
 	for {
 		if e == nil {
@@ -96,11 +103,13 @@ func (r *Room) Broadcast(msg []byte, errHandler func(*BroadcastError)) {
 			err := c.Send(msg)
 			if err != nil {
 				e := &BroadcastError{
-					Error: err,
-					Conn:  c,
-					Room:  r,
+					Err:  err,
+					Conn: c,
+					Room: r,
 				}
-				errHandler(e)
+				if errHandler != nil {
+					errHandler(e)
+				}
 			}
 		}()
 		e = e.Next()
@@ -116,9 +125,8 @@ func NewRoom() *Room {
 
 // Rooms rooms manager
 type Rooms struct {
-	Rooms  sync.Map
-	Lock   sync.Mutex
-	Errors chan *BroadcastError
+	Rooms sync.Map
+	Lock  sync.Mutex
 }
 
 // Members list connections in room by given room id.
@@ -134,6 +142,7 @@ func (r *Rooms) Members(roomid string) []connections.OutputConnection {
 //Auto create room if not exists.
 func (r *Rooms) Join(roomid string, conn connections.OutputConnection) {
 	var room *Room
+
 	v, ok := r.Rooms.Load(roomid)
 	if ok == false {
 		r.Lock.Lock()
@@ -168,29 +177,21 @@ func (r *Rooms) Leave(roomid string, conn connections.OutputConnection) {
 	return
 }
 
-func (r *Rooms) handleError(err *BroadcastError) {
-	go func() {
-		r.Errors <- err
-	}()
-}
-
 //Broadcast brodcat message to give room.
 //BroadcastError will be sent to Error chan if any error raised.
-func (r *Rooms) Broadcast(roomid string, msg []byte) {
+func (r *Rooms) Broadcast(roomid string, msg []byte, errHandler func(err error)) {
 	var room *Room
 	v, ok := r.Rooms.Load(roomid)
 	if ok == false {
 		return
 	}
 	room = v.(*Room)
-	room.Broadcast(msg, r.handleError)
+	room.Broadcast(msg, errHandler)
 }
 
 // NewRooms create new rooms manager.
 func NewRooms() *Rooms {
-	return &Rooms{
-		Errors: make(chan *BroadcastError),
-	}
+	return &Rooms{}
 }
 
 //Joinable  interfacer for which can joined as room manager.

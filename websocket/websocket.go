@@ -36,13 +36,14 @@ type Conn struct {
 //Send send message to connction.
 //return any error if raised.
 func (c *Conn) Send(msg []byte) error {
-
+	delay := time.NewTimer(c.options.WriteTimeout)
 	c.closelocker.Lock()
 	if !c.closed {
 		c.closelocker.Unlock()
 		select {
 		case c.output <- msg:
-		case <-time.After(c.options.WriteTimeout):
+			delay.Stop()
+		case <-delay.C:
 		}
 	} else {
 		c.closelocker.Unlock()
@@ -160,6 +161,7 @@ func Upgrade(w http.ResponseWriter, r *http.Request, opt *Options) (*Conn, error
 				// c.closelocker.Lock()
 				// close(c.output)
 				// close(c.errors)
+				// close(c.messages)
 				// c.closelocker.Unlock()
 				return
 			}
@@ -174,20 +176,21 @@ func Upgrade(w http.ResponseWriter, r *http.Request, opt *Options) (*Conn, error
 		for {
 			mt, msg, err := c.ReadMessage()
 			if err == io.EOF {
-				break
+				return
 			}
 			if err != nil {
 				c.closelocker.Lock()
 				closed := c.closed
 				if closed {
 					c.closelocker.Unlock()
-					break
+					return
 				}
 				if websocket.IsUnexpectedCloseError(err) {
 					c.doClose()
 					c.closelocker.Unlock()
-					break
+					return
 				}
+				c.closelocker.Unlock()
 				c.errors <- err
 				continue
 			}

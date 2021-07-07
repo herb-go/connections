@@ -66,7 +66,7 @@ func TestRoom(t *testing.T) {
 	if len(membernotexsit) != 0 {
 		t.Fatal(membernotexsit)
 	}
-	rooms.Broadcast(testroomid1, testmsg)
+	rooms.Broadcast(testroomid1, testmsg, nil)
 	bs, _ := readBytesChan(chanconn1.ClientMessagesChan())
 	if bytes.Compare(bs, testmsg) != 0 {
 		t.Fatal(bs)
@@ -75,7 +75,7 @@ func TestRoom(t *testing.T) {
 	if bs != nil {
 		t.Fatal(bs)
 	}
-	rooms.Broadcast(testroomid2, testmsg2)
+	rooms.Broadcast(testroomid2, testmsg2, nil)
 	bs, _ = readBytesChan(chanconn1.ClientMessagesChan())
 	if bs != nil {
 		t.Fatal(bs)
@@ -94,7 +94,7 @@ func TestRoom(t *testing.T) {
 		t.Fatal(bs)
 	}
 	location2.Join(testroomid1)
-	rooms.Broadcast(testroomid1, testmsg)
+	rooms.Broadcast(testroomid1, testmsg, nil)
 	bs, _ = readBytesChan(chanconn1.ClientMessagesChan())
 	if bytes.Compare(bs, testmsg) != 0 {
 		t.Fatal(bs)
@@ -108,8 +108,8 @@ func TestRoom(t *testing.T) {
 		t.Fatal(testroom1members)
 	}
 	location1.Join(testroomid2)
-	rooms.Broadcast(testroomid1, testmsg)
-	rooms.Broadcast(testroomid2, testmsg2)
+	rooms.Broadcast(testroomid1, testmsg, nil)
+	rooms.Broadcast(testroomid2, testmsg2, nil)
 	bs, _ = readBytesChan(chanconn1.ClientMessagesChan())
 	if bytes.Compare(bs, testmsg) != 0 {
 		t.Fatal(bs)
@@ -136,8 +136,8 @@ func TestRoom(t *testing.T) {
 		t.Fatal(memeber1rooms)
 	}
 	location1.LeaveAll()
-	rooms.Broadcast(testroomid1, testmsg)
-	rooms.Broadcast(testroomid2, testmsg2)
+	rooms.Broadcast(testroomid1, testmsg, nil)
+	rooms.Broadcast(testroomid2, testmsg2, nil)
 	bs, _ = readBytesChan(chanconn1.ClientMessagesChan())
 	if bytes.Compare(bs, testmsg) != 0 {
 		t.Fatal(bs)
@@ -155,8 +155,10 @@ func TestRoom(t *testing.T) {
 		t.Fatal(errconnection)
 	}
 	rooms.Join(testroomid2, connerr)
-	rooms.Broadcast(testroomid2, testmsg2)
-	rerr := <-rooms.Errors
+	var rerr *BroadcastError
+	rooms.Broadcast(testroomid2, testmsg2, func(err error) {
+		rerr = err.(*BroadcastError)
+	})
 	if rerr == nil || rerr.Room.ID != testroomid2 || rerr.Conn != connerr {
 		t.Fatal(rerr)
 	}
