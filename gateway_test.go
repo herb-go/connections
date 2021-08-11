@@ -177,8 +177,19 @@ func TestGateway(t *testing.T) {
 	if conn.RemoteAddr() != chanconn.Addr {
 		t.Fatal(conn.RemoteAddr())
 	}
-	g.Close(conn.ID())
+	conns := g.ListConn()
+	if len(conns) != 1 {
+		t.Fatal(conns)
+	}
+	err = g.Close(conn.ID())
+	if err != nil {
+		panic(err)
+	}
+	conns = g.ListConn()
 
+	if len(conns) != 0 {
+		t.Fatal(conns)
+	}
 	c, more := readConnChan(g.OnCloseEventsChan())
 	if more != true {
 		t.Fatal(more)

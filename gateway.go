@@ -179,7 +179,18 @@ func (g *Gateway) Close(id string) error {
 	if c == nil {
 		return nil
 	}
+	g.Connections.Delete(id)
 	return c.Close()
+}
+
+//ListConn list all connections
+func (g *Gateway) ListConn() []*Conn {
+	var result = []*Conn{}
+	g.Connections.Range(func(key interface{}, value interface{}) bool {
+		result = append(result, value.(*Conn))
+		return true
+	})
+	return result
 }
 
 //MessagesChan return connection message  chan.
