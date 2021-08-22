@@ -26,7 +26,7 @@ func TestMethods(t *testing.T) {
 
 	mux.Handle("/ws", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var err error
-		conn, err = Upgrade(w, r, MsgTypeText)
+		conn, err = Upgrade(w, r, &Options{MsgType: MsgTypeText})
 		if err != nil {
 			t.Fatal(err)
 		}
