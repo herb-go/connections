@@ -80,6 +80,7 @@ func (c *Conn) doClose() error {
 	}
 	close(c.c)
 	c.closed = true
+	c.WriteControl(websocket.CloseMessage, nil, c.options.WriteTimeout)
 	return c.Conn.Close()
 }
 func (c *Conn) send(m []byte) error {
