@@ -90,7 +90,7 @@ func (c *Conn) send(m []byte) error {
 		return nil
 	}
 	c.closelocker.Unlock()
-	err := c.Conn.SetWriteDeadline(time.Now().Add(c.options.Writc.options.WriteTimeoutc.options.WriteTimeouteTimeout))
+	err := c.Conn.SetWriteDeadline(time.Now().Add(c.options.WriteTimeout))
 	if err != nil {
 		return err
 	}
