@@ -80,7 +80,7 @@ func (c *Conn) doClose() error {
 	}
 	close(c.c)
 	c.closed = true
-	c.WriteControl(websocket.CloseMessage, nil, c.options.WriteTimeout)
+	c.WriteControl(websocket.CloseMessage, nil, time.Now().Add(c.options.WriteTimeout))
 	return c.Conn.Close()
 }
 func (c *Conn) send(m []byte) error {
@@ -90,7 +90,7 @@ func (c *Conn) send(m []byte) error {
 		return nil
 	}
 	c.closelocker.Unlock()
-	err := c.Conn.SetWriteDeadline(time.Now().Add(c.options.WriteTimeout))
+	err := c.Conn.SetWriteDeadline(time.Now().Add(c.options.Writc.options.WriteTimeoutc.options.WriteTimeouteTimeout))
 	if err != nil {
 		return err
 	}
