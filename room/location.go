@@ -24,7 +24,7 @@ func NewLocation(conn connections.OutputConnection, rooms Joinable) *Location {
 	}
 }
 
-//Join join user to give room
+//Join join user to given room
 func (l *Location) Join(roomid string) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
